@@ -11,14 +11,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    @Query(nativeQuery=true, value = "SELECT b FROM Booking b WHERE b.booker.id = :userId " +
-            "AND (:state = 'CURRENT' AND CURRENT_TIMESTAMP BETWEEN b.start AND b.end " +
-            "OR :state = 'PAST' AND b.end < CURRENT_TIMESTAMP " +
-            "OR :state = 'FUTURE' AND b.start > CURRENT_TIMESTAMP " +
+    @Query(nativeQuery=true, value = "SELECT * FROM bookings b WHERE b.booker_id = :userId " +
+            "AND (:state = 'CURRENT' AND CURRENT_TIMESTAMP BETWEEN b.start_date AND b.end_date " +
+            "OR :state = 'PAST' AND b.end_date < CURRENT_TIMESTAMP " +
+            "OR :state = 'FUTURE' AND b.start_date > CURRENT_TIMESTAMP " +
             "OR :state = 'WAITING' AND b.status = 'WAITING' " +
             "OR :state = 'REJECTED' AND b.status = 'REJECTED' " +
             "OR :state = 'ALL') " +
-            "ORDER BY b.start DESC")
+            "ORDER BY b.start_date DESC")
     List<Booking> findAllUserBookingsByState(@Param("userId") Long userId, @Param("state") String state);
     // необязательное:
     // Можно было бы оставить возможность выбора сортировки, чтобы в случае,
@@ -29,14 +29,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     //Аналогично с другими методами
     // - отмена
 
-    @Query(nativeQuery=true, value = "SELECT b FROM Booking b WHERE b.item.owner = :ownerId " +
-            "AND (:state = 'CURRENT' AND CURRENT_TIMESTAMP BETWEEN b.start AND b.end " +
-            "OR :state = 'PAST' AND b.end < CURRENT_TIMESTAMP " +
-            "OR :state = 'FUTURE' AND b.start > CURRENT_TIMESTAMP " +
+    @Query(nativeQuery=true, value = "SELECT * FROM bookings b JOIN items i ON b.item_id = i.id WHERE i.owner_id = :ownerId " +
+            "AND (:state = 'CURRENT' AND CURRENT_TIMESTAMP BETWEEN b.start_date AND b.end_date " +
+            "OR :state = 'PAST' AND b.end_date < CURRENT_TIMESTAMP " +
+            "OR :state = 'FUTURE' AND b.start_date > CURRENT_TIMESTAMP " +
             "OR :state = 'WAITING' AND b.status = 'WAITING' " +
             "OR :state = 'REJECTED' AND b.status = 'REJECTED' " +
             "OR :state = 'ALL') " +
-            "ORDER BY b.start DESC")
+            "ORDER BY b.start_date DESC")
     List<Booking> findAllOwnerBookingsByState(@Param("ownerId") Long ownerId, @Param("state") String state);
 
     @Query(nativeQuery=true, value = "SELECT b.id, b.start_date AS bookingDate, b.booker_id AS bookerId " +

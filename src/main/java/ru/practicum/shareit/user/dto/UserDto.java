@@ -20,7 +20,7 @@ public class UserDto {
     // а если будет, тогда она будет проверена на соответствие почте, а вот аннотацию
     // @NotEmpty только для создания, Так как при обновлении передавать ее не обязательно
     // - done
-    @Email(groups = {Update.class})
-    @NotNull
+    @Email(groups = {Create.class, Update.class})
+    @NotNull(groups = {Create.class})
     private String email;
 }

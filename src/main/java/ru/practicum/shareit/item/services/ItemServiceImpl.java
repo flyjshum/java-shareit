@@ -100,6 +100,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public ItemReplyDto updateItem(ItemCreationDto itemCreationDto, long itemId, long userId) {
         isExistItem(itemId);
         Item item = itemRepository.findById(itemId).get();
@@ -107,13 +108,13 @@ public class ItemServiceImpl implements ItemService {
         if (item.getOwner() != userId) {
             throw new InappropriateUserException("Item has a different owner" + userId);
         }
-        if (!itemCreationDto.getName().isBlank()) {
+        if (itemCreationDto.getName() != null && !itemCreationDto.getName().isBlank()) {
             // Хорошо было бы также проверить, что строка не пуста и не состоит только из пробелов
             // Сделать это удобно с помощью метода isBlank
             // - done
             item.setName(itemCreationDto.getName());
         }
-        if (!itemCreationDto.getDescription().isBlank()) {
+        if (itemCreationDto.getDescription() != null && !itemCreationDto.getDescription().isBlank()) {
             // Хорошо было бы также проверить, что строка не пуста и не состоит только из пробелов
             // Сделать это удобно с помощью метода isBlank
             // - done
@@ -122,10 +123,11 @@ public class ItemServiceImpl implements ItemService {
         if (itemCreationDto.getAvailable() != null) {
             item.setAvailable(itemCreationDto.getAvailable());
         }
-        return convertItemToDto(itemRepository.save(item));
+        return convertItemToDto(item);
     }
 
     @Override
+    @Transactional
     public void deleteItem(long userId) {
         itemRepository.deleteById(userId);
     }

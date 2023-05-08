@@ -101,7 +101,11 @@ public class BookingServiceImpl implements BookingService {
             // https://github.com/TyutterinYakov/CustomValidationClassLevel
             // - изучила, но решила пока не делать этого в данном проекте
 
-                bookingDto.getStart().isEqual(bookingDto.getEnd())) {
+//                bookingDto.getStart().isEqual(bookingDto.getEnd())
+//        ||  bookingDto.getStart().isAfter(bookingDto.getEnd())) {
+
+            bookingDto.getStart().compareTo(bookingDto.getEnd()) >= 0) {
+
             throw new BadRequestException("Not valid fields");
         }
     }
