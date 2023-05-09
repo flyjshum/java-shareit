@@ -1,8 +1,8 @@
 package ru.practicum.shareit.item.services;
 
 import org.modelmapper.ModelMapper;
+import org.modelmapper.PropertyMap;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.model.BookingDate;
@@ -25,11 +25,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.data.domain.Sort.Direction.DESC;
 
-@Transactional(readOnly = true)
 @Service
 public class ItemServiceImpl implements ItemService {
     private final ModelMapper mapper;
@@ -41,22 +38,29 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     public ItemServiceImpl(ModelMapper mapper, ItemRepository itemRepository, BookingRepository bookingRepository, CommentRepository commentRepository, UserService userService) {
         this.mapper = mapper;
+        this.mapper.addMappings(skipCommentFieldMap);
         this.itemRepository = itemRepository;
         this.bookingRepository = bookingRepository;
         this.commentRepository = commentRepository;
         this.userService = userService;
     }
 
+    PropertyMap<Item, ItemReplyDto> skipCommentFieldMap = new PropertyMap<Item, ItemReplyDto>() {
+        protected void configure() {
+            skip().setComments(null);
+        }
+    };
+
     @Override
     @Transactional(readOnly = true)
     public ItemReplyDto getItemDtoById(long itemId, long userId) {
         Item item = getItemById(itemId);
-        item.getComments();
         ItemReplyDto dto = convertItemToDto(item);
         if (item.getOwner() == userId) {
             dto.setLastBooking(bookingRepository.findLastBooking(itemId, LocalDateTime.now()));
             dto.setNextBooking(bookingRepository.findNextBooking(itemId, LocalDateTime.now()));
         }
+        dto.setComments(commentRepository.findByItem(item).orElse(new HashSet<>()));
         return dto;
     }
 
@@ -100,6 +104,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public ItemReplyDto updateItem(ItemCreationDto itemCreationDto, long itemId, long userId) {
         isExistItem(itemId);
         Item item = itemRepository.findById(itemId).get();
@@ -107,13 +112,13 @@ public class ItemServiceImpl implements ItemService {
         if (item.getOwner() != userId) {
             throw new InappropriateUserException("Item has a different owner" + userId);
         }
-        if (!itemCreationDto.getName().isBlank()) {
+        if (itemCreationDto.getName() != null && !itemCreationDto.getName().isBlank()) {
             // Хорошо было бы также проверить, что строка не пуста и не состоит только из пробелов
             // Сделать это удобно с помощью метода isBlank
             // - done
             item.setName(itemCreationDto.getName());
         }
-        if (!itemCreationDto.getDescription().isBlank()) {
+        if (itemCreationDto.getDescription() != null && !itemCreationDto.getDescription().isBlank()) {
             // Хорошо было бы также проверить, что строка не пуста и не состоит только из пробелов
             // Сделать это удобно с помощью метода isBlank
             // - done
@@ -122,10 +127,11 @@ public class ItemServiceImpl implements ItemService {
         if (itemCreationDto.getAvailable() != null) {
             item.setAvailable(itemCreationDto.getAvailable());
         }
-        return convertItemToDto(itemRepository.save(item));
+        return convertItemToDto(item);
     }
 
     @Override
+    @Transactional
     public void deleteItem(long userId) {
         itemRepository.deleteById(userId);
     }

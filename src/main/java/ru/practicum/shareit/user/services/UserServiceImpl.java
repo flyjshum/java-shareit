@@ -1,5 +1,6 @@
 package ru.practicum.shareit.user.services;
 
+import java.util.Objects;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserDto updateUser(UserDto userDto, long userId) {
         isExistUser(userId);
         // Действительно ли требуется производить дополнительный запрос для проверки наличия пользователя?
@@ -63,20 +65,20 @@ public class UserServiceImpl implements UserService {
         // - done
         User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("There is no such a user"));
 
-        if (!userDto.getName().isBlank()) {
+        if (userDto.getName() != null && !userDto.getName().isBlank()) {
             // Хорошо было бы также проверить, что строка не пуста и не состоит только из пробелов
             // Сделать это удобно с помощью метода isBlank
             // - done
             user.setName(userDto.getName());
         }
-        if (!userDto.getEmail().isBlank()) {
+        if (userDto.getEmail() != null && !userDto.getEmail().isBlank()) {
             // Хорошо было бы также проверить, что строка не пуста и не состоит только из пробелов
             // Сделать это удобно с помощью метода isBlank
             // - done
             user.setEmail(userDto.getEmail());
         }
 
-        return convertUserToDto(userRepository.save(user));
+        return convertUserToDto(user);
         // Вызов метода save более не будет требоваться,
         // так как мы будем работать в рамках транзакции с полученным объектом класса-сущности из БД,
         // а значит изменения будут автоматически зафиксированы
@@ -84,6 +86,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(long userId) {
         userRepository.deleteById(userId);
     }
